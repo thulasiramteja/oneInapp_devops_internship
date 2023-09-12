@@ -1,0 +1,7 @@
+FROM postgres:12
+
+ENV POSTGRES_DB budget_app_development
+ENV POSTGRES_USER budget_user
+ENV POSTGRES_PASSWORD secret_password
+
+EXPOSE 5432

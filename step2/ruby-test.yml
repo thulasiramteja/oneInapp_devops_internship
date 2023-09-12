@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ruby-test-namespace
+
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: ruby-test-namespace
+spec:
+  serviceName: postgresql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:latest
+          env:
+            - name: POSTGRES_DB
+              value: myappdb
+            - name: POSTGRES_USER
+              value: myappuser
+            - name: POSTGRES_PASSWORD
+              value: myapppassword
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi  
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-test
+  namespace: ruby-test-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruby-test
+  template:
+    metadata:
+      labels:
+        app: ruby-test
+    spec:
+      containers:
+        - name: my-app
+          image: ruby:3.1.2
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruby-test-service
+  namespace: ruby-test-namespace
+spec:
+  selector:
+    app: ruby-test
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer  
